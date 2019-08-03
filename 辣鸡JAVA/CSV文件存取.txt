@@ -1,0 +1,342 @@
+public static void read() {  
+	    try {  
+	        // 用来保存数据  
+	        ArrayList<String[]> csvFileList = new ArrayList<String[]>();  
+	        // 定义一个CSV路径  
+	        String csvFilePath = "g:/活动表.csv";  
+	        // 创建CSV读对象 例如:CsvReader(文件路径，分隔符，编码格式);  
+	        CsvReader reader = new CsvReader(csvFilePath, ',', Charset.forName("UTF-8"));  
+	        // 跳过表头 如果需要表头的话，这句可以忽略  
+	        reader.readHeaders();  
+	        // 逐行读入除表头的数据  
+	        while (reader.readRecord()) {  
+	            System.out.println(reader.getRawRecord());   
+	            csvFileList.add(reader.getValues());   
+	        }  
+	        reader.close();  
+	          
+	        // 遍历读取的CSV文件  
+	        for (int row = 0; row < csvFileList.size(); row++) {  
+	            // 取得第row行第0列的数据  
+	            String cell = csvFileList.get(row)[0];  
+	            System.out.println("------------>"+cell);  
+	        }  
+	    } catch (IOException e) {  
+	        e.printStackTrace();  
+	    }  
+	}  
+
+
+
+
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+public class TestRead {    
+	   
+    public static void main(String[] args) {    
+        try {    
+            BufferedReader reader = new BufferedReader(new FileReader("g:/活动表.csv"));//换成你的文件名   
+            reader.readLine();//第一行信息，为标题信息，不用,如果需要，注释掉   
+            String line = null;    
+            while((line=reader.readLine())!=null){    
+                String item[] = line.split(",");//CSV格式文件为逗号分隔符文件，这里根据逗号切分   
+                    
+                String last = item[item.length-1];//这就是你要的数据了   
+                //int value = Integer.parseInt(last);//如果是数值，可以转化为数值   
+                System.out.println(last);    
+            }    
+        } catch (Exception e) {    
+            e.printStackTrace();    
+        }    
+    }    
+   
+
+
+
+
+import java.io.BufferedReader;  
+import java.io.FileInputStream;  
+import java.io.IOException;  
+import java.io.InputStreamReader;  
+import java.util.ArrayList;  
+import java.util.List;  
+import java.util.regex.Matcher;  
+import java.util.regex.Pattern;  
+  
+  
+public class TestImportCsv {  
+  
+    private InputStreamReader fr = null;  
+    private BufferedReader br = null;  
+  
+    public TestImportCsv(String f) throws IOException {  
+        fr = new InputStreamReader(new FileInputStream(f));  
+    }  
+  
+    /** 
+     * 解析csv文件 到一个list中 每个单元个为一个String类型记录，每一行为一个list。 再将所有的行放到一个总list中 
+     */  
+    public List<List<String>> readCSVFile() throws IOException {  
+        br = new BufferedReader(fr);  
+        String rec = null;// 一行  
+        String str;// 一个单元格  
+        List<List<String>> listFile = new ArrayList<List<String>>();  
+        try {  
+            // 读取一行  
+            while ((rec = br.readLine()) != null) {  
+                Pattern pCells = Pattern.compile
+                		//(toString());
+                		("(\"[^\"]*(\"{2})*[^\"]*\")*[^,]*,");  
+                Matcher mCells = pCells.matcher(rec);  
+                List<String> cells = new ArrayList<String>();// 每行记录一个list  
+                //System.out.println(cells);  
+                // 读取每个单元格  
+                while (mCells.find()) {  
+                	
+                    str = mCells.group(); 
+                    //System.out.println(cells);  
+                    //str = str.replaceAll(  "(?sm)\"?([^\"]*(\"{2})*[^\"]*)\"?.*,", "$1"); 
+                   
+                    //str = str.replaceAll("(?sm)(\"(\"))", "$2");  
+                   
+                    cells.add(str);    
+                }  
+                System.out.println(cells); 
+                listFile.add(cells); 
+                
+            }  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        } finally {  
+            if (fr != null) {  
+                fr.close();  
+            }  
+            if (br != null) {  
+                br.close();  
+            }  
+        }  
+        return listFile;  
+    }  
+  
+    public static void main(String[] args) throws Throwable {  
+        TestImportCsv test = new TestImportCsv("g:/活动表.csv");  
+        List<List<String>> csvList = test.readCSVFile();          
+    }  
+  
+}  
+}  
+
+
+
+import java.io.BufferedReader;  
+import java.io.FileInputStream;  
+import java.io.InputStreamReader;  
+import java.util.ArrayList;  
+  
+public class CSVFileUtil {  
+    // CSV文件编码  
+    public static final String ENCODE = "UTF-8";  
+  
+    private FileInputStream fis = null;  
+    private InputStreamReader isw = null;  
+    private BufferedReader br = null;  
+  
+     
+    public CSVFileUtil(String filename) throws Exception {  
+        fis = new FileInputStream(filename);  
+        isw = new InputStreamReader(fis, ENCODE);  
+        br = new BufferedReader(isw);  
+    }  
+  
+    // ==========以下是公开方法=============================  
+    /** 
+     * 从CSV文件流中读取一个CSV行。 
+     * 
+     * @throws Exception 
+     */  
+    public String readLine() throws Exception {  
+  
+        StringBuffer readLine = new StringBuffer();  
+        boolean bReadNext = true;  
+  
+        while (bReadNext) {  
+            //  
+            if (readLine.length() > 0) {  
+                readLine.append("\r\n");  
+            }  
+            // 一行  
+            String strReadLine = br.readLine();  
+  
+            // readLine is Null  
+            if (strReadLine == null) {  
+                return null;  
+            }  
+            readLine.append(strReadLine);  
+  
+            // 如果双引号是奇数的时候继续读取。考虑有换行的是情况。  
+            if (countChar(readLine.toString(), '"', 0) % 2 == 1) {  
+                bReadNext = true;  
+            } else {  
+                bReadNext = false;  
+            }  
+        }  
+        return readLine.toString();  
+    }  
+  
+    /** 
+     *把CSV文件的一行转换成字符串数组。指定数组长度，不够长度的部分设置为null。 
+     */  
+    public static String[] fromCSVLine(String source, int size) {  
+        ArrayList tmpArray = fromCSVLinetoArray(source);  
+        if (size < tmpArray.size()) {  
+            size = tmpArray.size();  
+        }  
+        String[] rtnArray = new String[size];  
+        tmpArray.toArray(rtnArray);  
+        return rtnArray;  
+    }  
+  
+    /** 
+     * 把CSV文件的一行转换成字符串数组。不指定数组长度。 
+     */  
+    public static ArrayList fromCSVLinetoArray(String source) {  
+        if (source == null || source.length() == 0) {  
+            return new ArrayList();  
+        }  
+        int currentPosition = 0;  
+        int maxPosition = source.length();  
+        int nextComma = 0;  
+        ArrayList rtnArray = new ArrayList();  
+        while (currentPosition < maxPosition) {  
+            nextComma = nextComma(source, currentPosition);  
+            rtnArray.add(nextToken(source, currentPosition, nextComma));  
+            currentPosition = nextComma + 1;  
+            if (currentPosition == maxPosition) {  
+                rtnArray.add("");  
+            }  
+        }  
+        return rtnArray;  
+    }  
+  
+  
+    /** 
+     * 把字符串类型的数组转换成一个CSV行。（输出CSV文件的时候用） 
+     */  
+    public static String toCSVLine(String[] strArray) {  
+        if (strArray == null) {  
+            return "";  
+        }  
+        StringBuffer cvsLine = new StringBuffer();  
+        for (int idx = 0; idx < strArray.length; idx++) {  
+            String item = addQuote(strArray[idx]);  
+            cvsLine.append(item);  
+            if (strArray.length - 1 != idx) {  
+                cvsLine.append(',');  
+            }  
+        }  
+        return cvsLine.toString();  
+    }  
+  
+    /** 
+     * 字符串类型的List转换成一个CSV行。（输出CSV文件的时候用） 
+     */  
+    public static String toCSVLine(ArrayList strArrList) {  
+        if (strArrList == null) {  
+            return "";  
+        }  
+        String[] strArray = new String[strArrList.size()];  
+        for (int idx = 0; idx < strArrList.size(); idx++) {  
+            strArray[idx] = (String) strArrList.get(idx);  
+        }  
+        return toCSVLine(strArray);  
+    }  
+  
+    // ==========以下是内部使用的方法=============================  
+    /** 
+     *计算指定文字的个数。 
+     * 
+     * @param str 文字列 
+     * @param c 文字 
+     * @param start  开始位置 
+     * @return 个数 
+     */  
+    private int countChar(String str, char c, int start) {  
+        int i = 0;  
+        int index = str.indexOf(c, start);  
+        return index == -1 ? i : countChar(str, c, index + 1) + 1;  
+    }  
+  
+    /** 
+     * 查询下一个逗号的位置。 
+     * 
+     * @param source 文字列 
+     * @param st  检索开始位置 
+     * @return 下一个逗号的位置。 
+     */  
+    private static int nextComma(String source, int st) {  
+        int maxPosition = source.length();  
+        boolean inquote = false;  
+        while (st < maxPosition) {  
+            char ch = source.charAt(st);  
+            if (!inquote && ch == ',') {  
+                break;  
+            } else if ('"' == ch) {  
+                inquote = !inquote;  
+            }  
+            st++;  
+        }  
+        return st;  
+    }  
+  
+    /** 
+     * 取得下一个字符串 
+     */  
+    private static String nextToken(String source, int st, int nextComma) {  
+        StringBuffer strb = new StringBuffer();  
+        int next = st;  
+        while (next < nextComma) {  
+            char ch = source.charAt(next++);  
+            if (ch == '"') {  
+                if ((st + 1 < next && next < nextComma) && (source.charAt(next) == '"')) {  
+                    strb.append(ch);  
+                    next++;  
+                }  
+            } else {  
+                strb.append(ch);  
+            }  
+        }  
+        return strb.toString();  
+    }  
+  
+    /** 
+     * 在字符串的外侧加双引号。如果该字符串的内部有双引号的话，把"转换成""。 
+     * 
+     * @param item  字符串 
+     * @return 处理过的字符串 
+     */  
+    private static String addQuote(String item) {  
+        if (item == null || item.length() == 0) {  
+            return "\"\"";  
+        }  
+        StringBuffer sb = new StringBuffer();  
+        sb.append('"');  
+        for (int idx = 0; idx < item.length(); idx++) {  
+            char ch = item.charAt(idx);  
+            if ('"' == ch) {  
+                sb.append("\"\"");  
+            } else {  
+                sb.append(ch);  
+            }  
+        }  
+        sb.append('"');  
+        return sb.toString();  
+    } 
+    
+    public static void main(String[] args) throws Throwable {  
+    	CSVFileUtil test = new CSVFileUtil("g:/活动表.csv");  
+        String csvList = test.readLine();  
+        System.out.println(csvList);
+    }  
+}  
